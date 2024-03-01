@@ -1,5 +1,5 @@
 from cryptography.fernet import Fernet
-from grades_ClientServer import Client
+from server import Client
 
 import socket
 import argparse
