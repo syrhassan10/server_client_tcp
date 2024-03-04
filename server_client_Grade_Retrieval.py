@@ -4,7 +4,7 @@
 Echo Client and Server Classes
 
 T. D. Todd
-McMaster University
+McMaster University Group
 
 to create a Client: "python EchoClientServer.py -r client" 
 to create a Server: "python EchoClientServer.py -r server" 
@@ -190,8 +190,8 @@ class Server:
         command = decoded_message[7:]    
 
         # Printing the results
-        print("ID Number:", id_number)
-        print("Command:", command)
+        print("Full Message :", decoded_message)
+    #    print("Command:", command)
 
         return id_number, command
     
@@ -397,7 +397,25 @@ if __name__ == '__main__':
                         required=True, type=str)
 
     args = parser.parse_args()
-    roles[args.role]()
+
+    if (roles[args.role] == Client):
+        while True:
+            id_number_input = input("Please Enter ID Number: ")
+            command_input = input("Please Enter Command: GMA, GL1A, GL2A, GL3A, GL4A, GEA, GG: ")
+
+
+            # encoding
+            id_number_bytes = id_number_input.encode('ascii')
+            command_bytes = command_input.encode('ascii')
+            full_message = id_number_bytes + command_bytes
+
+            print("Full message to be sent (in bytes):", full_message)
+            #creating a new instance of the client
+            Client(full_message, id_number_input)
+    else:
+        roles[args.role]()
+
+
 
 ########################################################################
 
