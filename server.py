@@ -54,6 +54,8 @@ class Server:
     SOCKET_ADDRESS = (HOSTNAME, PORT)
 
     def __init__(self):
+        file_path = 'course_grades_2024.csv'
+        self.print_rows(file_path)
         self.create_listen_socket()
         self.process_connections_forever()
 
@@ -128,34 +130,44 @@ class Server:
             if matching_row:
                 print("User Found: ", matching_row)
             else:
-                print("User Not found")
+                print("User Not found Closing Connection")
                 connection.close()
+                return
 
 
 
             match command:
                 case "GMA":
-                    print("Command GMA selected.")
-                    data = matching_row[7]
+                    print("Fetching Midterm average.")
+                    data = self.get_averages(file_path)[4]
                 case "GL1A":
-                    print("Command GL1A selected.")
+                    print("Fetching Lab 1 average.")
+                    data = self.get_averages(file_path)[0]                    
                 case "GL2A":
-                    print("Command GL2A selected.")
+                    print("Fetching Lab 2 average.")
+                    data = self.get_averages(file_path)[1] 
                 case "GL3A":
-                    print("Command GL3A selected.")
+                    print("Fetching Lab 3 average.")
+                    data = self.get_averages(file_path)[2] 
                 case "GL4A":
-                    print("Command GL4A selected.")
+                    print("Fetching Lab 4average.")
+                    data = self.get_averages(file_path)[3] 
                 case "GEA":
-                    print("Command GEA selected.")
+                    print("Fetching Exam average.")
+                    data = self.get_averages(file_path)[5] 
                 case "GG":
-                    print("Command GG selected.")
+                    print("Getting Grades.")
+                    data = matching_row
                 case _:
                     print("Invalid command entered.")
+                    print("Closing client connection ... ")
+                    connection.close()
+
 
             encryption_key_bytes= matching_row[2].encode('ascii')
             fernet = Fernet(encryption_key_bytes)
-
-            data_bytes = data.encode('ascii')
+            data_str = str(data)  
+            data_bytes = data_str.encode('ascii')
             encrypted_message_bytes = fernet.encrypt(data_bytes)
 
             # Send the received bytes back to the client. We are
@@ -193,7 +205,43 @@ class Server:
                 if row[1] == search_ID:
                     return row
         return None
+    
+    def get_averages(self,file_path):
+        '''
+        Array contents = [Lab 1,Lab 2,Lab 3,Lab 4,Midterm,Exam 1,Exam 2,Exam 3,Exam 4]
+        '''
+        grades = [0] * 9
 
+        i = 3
+        count =0
+        with open(file_path, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader)  # Skip the header row
+            for row in reader:
+                i = 3
+                count = count + 1
+                for j in range(9):
+                    grades[j] += int(row[i])
+                    #print(j)
+                    i = i + 1
+
+        
+        for i in range (len(grades)):
+            grades[i] = grades[i] / count
+
+
+        return grades
+
+    
+    def print_rows(self, file_path):
+        print('Data read from CSV file: \n')
+        with open(file_path, newline='') as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader)  # Skip the header row
+            for row in reader:
+                print(row)
+                    
+        return None
 ########################################################################
 # Echo Client class
 ########################################################################
@@ -250,9 +298,11 @@ class Client:
         try:
             self.connection_send()
             self.connection_receive()
+            print("Closing server connection ... gravceful")
+            self.socket.close()
         except (KeyboardInterrupt, EOFError):
             print()
-            print("Closing server connection ...")
+            print("Closing server connection ... Special")
             # If we get and error or keyboard interrupt, make sure
             # that we close the socket.
             self.socket.close()
@@ -280,7 +330,7 @@ class Client:
             if len(recvd_bytes) == 0:
                 print("Closing server connection ... ")
                 self.socket.close()
-                sys.exit(1)
+                return
 
 
 
@@ -288,12 +338,12 @@ class Client:
 
 
             matching_row = self.find_row_by_ID(file_path, self.ID_num)
-
-            if matching_row:
-                print("Matching row found:", matching_row)
-            else:
-                print("No matching row found.")
-
+            
+            if not matching_row:
+                print("User Not found closing connection.")
+                self.socket.close()
+                return
+            
             encryption_key_bytes = matching_row[2].encode('ascii')
             
             self.decrypt_message(recvd_bytes,encryption_key_bytes)
@@ -325,6 +375,8 @@ class Client:
                 if row[1] == search_ID:
                     return row
         return None
+
+
 
 ########################################################################
 # Process command line arguments if this module is run directly.
