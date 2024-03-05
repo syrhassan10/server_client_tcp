@@ -362,7 +362,7 @@ class Client:
 
         fernet = Fernet(key)
         decrypted_message_bytes = fernet.decrypt(encrypted_message_bytes)
-        decrypted_message = decrypted_message_bytes.decode('utf-8')
+        decrypted_message = decrypted_message_bytes.decode('ascii')
         print("decrypted_message = ", decrypted_message)
 
 
@@ -408,7 +408,7 @@ if __name__ == '__main__':
             id_number_bytes = id_number_input.encode('ascii')
             command_bytes = command_input.encode('ascii')
             full_message = id_number_bytes + command_bytes
-
+            print("Command Entered:", command_input)
             print("Full message to be sent (in bytes):", full_message)
             #creating a new instance of the client
             Client(full_message, id_number_input)
